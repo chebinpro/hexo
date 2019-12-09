@@ -3,7 +3,6 @@ layout: title
 title: 在PHP中使用yield来做内存优化
 date: 2018-12-05 10:11:22
 tags: PHP
-top: true
 ---
 * 什么是yield
 * yield&return的区别
