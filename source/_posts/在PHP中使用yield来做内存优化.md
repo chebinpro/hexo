@@ -3,13 +3,20 @@ layout: title
 title: 在PHP中使用yield来做内存优化
 date: 2018-12-05 10:11:22
 tags: PHP
+top: true
 ---
+* 什么是yield
+* yield&return的区别
+* yield有什么选项
+* 结论
 
 <!--more-->
 
-# 什么是yield
+# <span style="color:#339AFF;">什么是yield</span>
 
+```txt
 生成器函数看上去就像一个普通函数，除了不是返回一个值之外， 生成器会根据需求产生更多的值。
+```
 
 来看以下的例子：
 ```php
@@ -22,7 +29,7 @@ echo getValues();
 ```
 当然，这不是他生效的方式，前面的例子会给你一个致命的错误： 类生成器的对象不能被转换成字符串， 让我们清楚的说明：
 
-# "yield" & "return" 的区别
+# yield&return的区别
 
 前面的错误意味着getValues()方法不会如预期返回一个字符串，让我们检查一下他的类型：
 ```php
@@ -136,3 +143,52 @@ foreach ($values as $key => $value) {
 # 结论
 
 这个主题的主要原因是为了明确yield和return特别是在内存使用方面的区别，使用一些例子是因为我发现他对任何开发人员思考真的很重要。
+
+# 具体情景
+
+http://www.php100.com/9/20/19693.html
+
+laravel ORM中的cursor游标cursor方法允许你使用游标遍历数据库，它只执行一次查询。处理大量的数据时,可以大大减少内存的使用量通过对比cursor与get方法，查找到了其中的一点不同，get方法是直接fetchAll返回所有数据，cursor方法是使用yield构建了一个生成器，逐步返回fetch的数据
+PDO mysql中的查询
+一般查询如下：
+```php
+$sql = "select * from `user` limit 100000000";
+$stat = $pdo->query($sql);
+$data = $stat->fetchAll();  //mysql buffered直接全部返回给php
+
+var_dump($data);
+```
+使用yield如下：
+```php
+function get(){
+    $sql = "select * from `user` limit 100000000";
+    $stat = $pdo->query($sql);
+    while ($row = $stat->fetch()) { //一个一个地返回给php
+        yield $row;
+    }
+}
+
+foreach (get() as $row) {
+    var_dump($row);
+}
+```
+**PDO参数**
+
+这个PDO参数，侧面说明了，如果这个参数为ture,MySQL驱动程序将使用MySQL API的缓冲版本。
+
+注意，这个参数只对Mysql起作用，如果要编写可移植的sql代码，请使用fetchAll
+查看php手册MYSQL_ATTR_USE_BUFFERED_QUERY
+在使用了yield的情况下，内存使用量的确减少了，但是在逐渐使用yield中，内存会逐渐增大，这样的情况与以下函数不一致，下面这个函数的内存使用量将会不变
+```php
+function getNum() {
+    for($i=0; $i < 100000000; $i++) {
+        yield $i;
+    }
+}
+```
+
+# 结论
+
+在使用fetch、fetchAll之前，查找数据结果集还存在于mysql的缓冲区内，而每次yield和fetch配合，才取回一条结果存入内存，这就能解释，为什么内存使用量会逐步增大
+
+而上面的这个getNum函数之所以内存使用量不变，是因为，每次只返回一个数字

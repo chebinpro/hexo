@@ -1,9 +1,10 @@
 ---
 layout: title
 title: PHP的依赖注入(DI)和控制反转(IoC)
-date: 2019-07-17 15:01:10
+date: 2018-07-17 15:01:10
 categories: PHP
 tags: 依赖注入
+top: true
 ---
 思考并回答以下问题：
 * 这两种模式的目的是什么？
